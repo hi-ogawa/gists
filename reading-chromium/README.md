@@ -489,7 +489,11 @@ WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
       new BrowsingInstance
       new SiteInstanceImpl
     FrameTree::Init =>
-      RenderFrameHostManager::InitRoot => ??
+      RenderFrameHostManager::InitRoot =>
+        CreateRenderFrameHost =>
+          FrameTree::CreateRenderViewHost => RenderViewHostFactory::Create
+          RenderFrameHostFactory::Create
+        SetRenderFrameHost
     CreateWebContentsView => ??
     WebContentsView::CreateView => ??
 
@@ -552,12 +556,12 @@ ContentClient
 
 Shell < WebContentsDelegate
 
-RenderFrameHostImpl
-
 WebContentsImpl < WebContents, NavigationControllerDelegate, ...
   FrameTree
     FrameTreeNode (one for root)
       RenderFrameHostManager
+        RenderFrameHostImpl
+          RenderViewHostImpl
 
 SiteInstanceImpl < SiteInstance
   BrowsingInstance
