@@ -9,7 +9,7 @@ reading-chromium
     - content
   - web tests
   - debugger
-- [ ] blink
+- [ ] blink (wip)
   - [ ] overview
   - [ ] layout
   - [ ] paint
@@ -18,7 +18,7 @@ reading-chromium
   - [ ] v8 integration
   - [ ] event loop
   - [ ] public api used by content
-- [ ] content
+- [ ] content (wip)
   - content-shell
 - [ ] chrome
 
@@ -35,6 +35,9 @@ reading-chromium
 # hacking
 
 - cf. [reading-v8](https://gist.github.com/hi-ogawa/637e1d95da20a522b7bae4c4401090db#hacking)
+
+- TODO: vscode extension to jump to to https://source.chromium.org e.g.
+  - `https://source.chromium.org/chromium/chromium/src/+/main:<file-name>;l=<line-number>`
 
 ## strategy
 
@@ -458,7 +461,7 @@ TODO
 # browser process
 #
 
-# content/app/content_main.cc
+# content/shell/app/shell_main.cc
 main => content::ContentMain =>
   ContentMainRunner::Create => ContentMainRunnerImpl::Create => ??
   RunContentProcess =>
@@ -475,13 +478,35 @@ main => content::ContentMain =>
       (for other processes)
         RunOtherNamedProcessTypeMain => ??
 
+?? => Shell::CreateNewWindow =>
+  WebContents::Create => ...
+  CreateShell => ??
+
+WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
+  new WebContentsImpl
+  WebContentsImpl::Init => 
+    SiteInstance::Create => SiteInstanceImpl::Create =>
+      new BrowsingInstance
+      new SiteInstanceImpl
+    FrameTree::Init =>
+      RenderFrameHostManager::InitRoot => ??
+    CreateWebContentsView => ??
+    WebContentsView::CreateView => ??
+
+
 #
 # renderer host
 #
 
-RendererProcessHostImpl
-
-RenderProcessHostImpl::InitializeChannelProxy => ??
+SiteInstanceImpl::GetProcess => RenderProcessHostImpl::GetProcessHostForSiteInstance =>
+  RenderProcessHostImpl::CreateRenderProcessHost =>
+    new RenderProcessHostImpl => 
+      RenderProcessHostImpl::InitializeChannelProxy =>
+        IPC::ChannelProxy::GetRemoteAssociatedInterface (for mojom::Renderer from renderer process)
+  RenderProcessHostImpl::Init =>
+    RegisterMojoInterfaces
+    mojom::Renderer::InitializeRenderer (queueing `RenderThreadImpl::InitializeRenderer` in renderer process in the future?)
+    instantiate ChildProcessLauncher (actually spawn process?)
 
 ?? => 
   AgentSchedulingGroupHost::SetUpIPC =>
@@ -519,7 +544,25 @@ RenderThreadImpl::CreateAgentSchedulingGroup (as mojom::Renderer) => ??
 # data structure
 #
 
-RenderProcessHostImpl < mojom::RendererHost
+ShellMainDelegate < ContentMainDelegate (interface for factory of ContentClient, ContentBrowserClient, etc...)
+
+ContentClient
+  ContentBrowserClient
+  ContentRendererClient
+
+Shell < WebContentsDelegate
+
+RenderFrameHostImpl
+
+WebContentsImpl < WebContents, NavigationControllerDelegate, ...
+  FrameTree
+    FrameTreeNode (one for root)
+      RenderFrameHostManager
+
+SiteInstanceImpl < SiteInstance
+  BrowsingInstance
+
+RenderProcessHostImpl < mojom::RendererHost, RenderProcessHost < IPC::Sender
   mojo::AssociatedRemote<mojom::Renderer>
 
 RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
