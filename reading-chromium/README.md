@@ -398,7 +398,7 @@ SimTest (gtest class)
       LocalFrame (cf. WebLocalFrameImpl::SetCoreFrame)
       LocalFrameClientImpl < < LocalFrameClient < FrameClient
       WebFrameWidgetImpl
-  TestWebViewClient < WebViewClient (TODO??)
+  TestWebViewClient < WebViewClient
   SimNetwork
     SimRequestBase
   SimCompositor
@@ -442,12 +442,14 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 - `content/public/README.md`
 - `content/shell`
 - `content/renderer`, `content/renderer/renderer_main.cc`
+- `content/browseer`, `content/borwser/renderer_host`
 
 TODO
 
 - how does content shell initiates opening url?
 - reactive render loop?
 - render view
+- deubgging renderer process/thread
 
 ```
 #
@@ -479,7 +481,7 @@ main => content::ContentMain =>
 # content/renderer/renderer_main.cc
 RendererMain =>
   blink::Platform::InitializeBlink
-  RenderProcessImpl::Create
+  RenderProcessImpl::Create => new RenderProcessImpl (v8 flag setup)
   new RenderThreadImpl => RenderThreadImpl::Init =>
     viz::Gpu::Create
     InitializeWebKit =>
@@ -494,6 +496,8 @@ RendererMain =>
   RunLoop::Run
 
 
+?? => AgentSchedulingGroup::CreateWebView
+
 #
 # data structure
 #
@@ -504,7 +508,7 @@ RenderThreadImpl < RenderThread
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 
-RenderViewImpl < blink::WebViewClient
+RenderFrameImpl < blink::WebLocalFrameClient
 ```
 
 # old notes
