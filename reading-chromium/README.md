@@ -443,12 +443,14 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 - `content/shell`
 - `content/renderer`, `content/renderer/renderer_main.cc`
 - `content/browseer`, `content/borwser/renderer_host`
+- `content/common/renderer.mojom`, `content/common/renderer_host.mojom`
+- https://chromium.googlesource.com/chromium/src/+/refs/heads/main/mojo/public/cpp/bindings/README.md#remote-and-pendingreceiver  
 
 TODO
 
-- how does content shell initiates opening url?
+- how does content shell initiates renderer thread?
+- how does content shell initiates rendering
 - reactive render loop?
-- render view
 - deubgging renderer process/thread
 
 ```
@@ -460,7 +462,7 @@ TODO
 main => content::ContentMain =>
   ContentMainRunner::Create => ContentMainRunnerImpl::Create => ??
   RunContentProcess =>
-    InitializeMojo
+    InitializeMojo => ??
     ContentMainRunnerImpl::Initialize
     ContentMainRunnerImpl::Run =>
       (for browser process)
@@ -473,6 +475,17 @@ main => content::ContentMain =>
       (for other processes)
         RunOtherNamedProcessTypeMain => ??
 
+#
+# renderer host
+#
+
+RendererProcessHostImpl
+
+RenderProcessHostImpl::InitializeChannelProxy => ??
+
+?? => 
+  AgentSchedulingGroupHost::SetUpIPC =>
+    CreateAgentSchedulingGroup (to remote interface mojom::Renderer)
 
 #
 # renderer process
@@ -482,29 +495,34 @@ main => content::ContentMain =>
 RendererMain =>
   blink::Platform::InitializeBlink
   RenderProcessImpl::Create => new RenderProcessImpl (v8 flag setup)
-  new RenderThreadImpl => RenderThreadImpl::Init =>
-    viz::Gpu::Create
-    InitializeWebKit =>
-      instantiate RendererBlinkPlatformImpl
-      # third_party/blink/renderer/controller/blink_initializer.cc
-      blink::Initialize =>
-        Platform::InitializeMainThread
-        InitializeCommon =>
-          ModulesInitializer::Initialize (as BlinkInitializer) =>
-            CoreInitializer::Initialize => ...
-          V8Initializer::InitializeMainThread
+  new RenderThreadImpl =>
+    ChildThreadImpl::Init (mojo initialization e.g. mojo::PendingRemote<mojom::ChildProcessHost>)
+    RenderThreadImpl::Init =>
+      viz::Gpu::Create (cf. viz::mojom::Gpu)
+      InitializeWebKit =>
+        instantiate RendererBlinkPlatformImpl
+        # third_party/blink/renderer/controller/blink_initializer.cc
+        blink::Initialize =>
+          Platform::InitializeMainThread
+          InitializeCommon =>
+            ModulesInitializer::Initialize (as BlinkInitializer) =>
+              CoreInitializer::Initialize => ...
+            V8Initializer::InitializeMainThread
   RunLoop::Run
 
+RenderThreadImpl::CreateAgentSchedulingGroup (as mojom::Renderer) => ??
 
 ?? => AgentSchedulingGroup::CreateWebView
+
 
 #
 # data structure
 #
 
-ContentMainRunner
+RenderProcessHostImpl < mojom::RendererHost
+  mojo::AssociatedRemote<mojom::Renderer>
 
-RenderThreadImpl < RenderThread
+RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 
