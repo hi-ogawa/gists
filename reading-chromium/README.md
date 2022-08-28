@@ -321,9 +321,7 @@ NGInlineItem
   ShapeResult
 ```
 
-- simulating render lifecycle in unit tests (cf. third_party/blink/renderer/core/testing/sim)
-  - document tree (Node)
-  - layout tree (LayoutObject)
+# blink in unittest
 
 ```
 TEST_F(NGInlineLayoutTest, BlockWithSingleTextNode)
@@ -438,7 +436,7 @@ Document
 LayoutView < LayoutBlockFlow < LayoutBlockFlow
 ```
 
-# content
+# content shell
 
 - `content/README.md`
 - `content/public/README.md`
@@ -448,6 +446,8 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 TODO
 
 - how does content shell initiates opening url?
+- reactive render loop?
+- render view
 
 ```
 #
@@ -503,6 +503,8 @@ ContentMainRunner
 RenderThreadImpl < RenderThread
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
+
+RenderViewImpl < blink::WebViewClient
 ```
 
 # old notes
