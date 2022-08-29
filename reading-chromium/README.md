@@ -39,6 +39,8 @@ reading-chromium
 - TODO: vscode extension to jump to to https://source.chromium.org e.g.
   - `https://source.chromium.org/chromium/chromium/src/+/main:<file-name>;l=<line-number>`
 
+- to speed up the search, set `include` filter pattern (e.g. `third_party/blink, content`)
+
 ## strategy
 
 - look for "interesting" commit
@@ -473,14 +475,28 @@ main => content::ContentMain =>
           # content/browser/browser_main.cc
           BrowserMain =>
             BrowserMainRunnerImpl::Create
-            BrowserMainRunnerImpl::Initialize
-            BrowserMainRunnerImpl::Run
+            BrowserMainRunnerImpl::Initialize =>
+              instantiate BrowserMainLoop
+              BrowserMainLoop::Init => ShellContentBrowserClient::CreateBrowserMainParts (as ContentBrowserClient)
+              BrowserMainLoop::CreateMainMessageLoop => new BrowserThreadImpl
+              BrowserMainLoop::CreateStartupTasks (queue task e.g. BrowserMainLoop::PreMainMessageLoopRun)
+            BrowserMainRunnerImpl::Run => BrowserMainLoop::RunMainMessageLoop
       (for other processes)
         RunOtherNamedProcessTypeMain => ??
 
-?? => Shell::CreateNewWindow =>
-  WebContents::Create => ...
-  CreateShell => ??
+
+BrowserMainLoop::PreMainMessageLoopRun =>
+  ShellBrowserMainParts::PreMainMessageLoopRun (as BrowserMainParts) =>
+    Shell::Initialize => ShellPlatformDelegate::Initialize (e.g. aura) =>
+      instantiate ShellPlatformDataAura => aura::WindowTreeHost::Create
+    InitializeMessageLoopContext =>
+      Shell::CreateNewWindow =>
+        WebContents::Create => ...
+        Shell::CreateShell =>
+          new Shell
+          ShellPlatformDelegate::CreatePlatformWindow => ShellPlatformDataAura::ResizeWindow
+          ShellPlatformDelegate::SetContents => aura::Window::Show
+
 
 WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
   new WebContentsImpl
@@ -548,16 +564,25 @@ RenderThreadImpl::CreateAgentSchedulingGroup (as mojom::Renderer) => ??
 # data structure
 #
 
+BrowserMainRunnerImpl
+  BrowserMainLoop
+    BrowserThreadImpl
+
 ShellMainDelegate < ContentMainDelegate (interface for factory of ContentClient, ContentBrowserClient, etc...)
 
 ContentClient
   ContentBrowserClient
   ContentRendererClient
 
+ShellPlatformDelegate (e.g. content/shell/browser/shell_platform_delegate_aura.cc)
+
 Shell < WebContentsDelegate
+  WebContents
 
 WebContentsImpl < WebContents, NavigationControllerDelegate, ...
   FrameTree
+    Navigator
+      NavigationControllerImpl (cf. WebContentsImpl::GetController)
     FrameTreeNode (one for root)
       RenderFrameHostManager
         RenderFrameHostImpl
