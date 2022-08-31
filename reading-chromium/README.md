@@ -65,7 +65,7 @@ gclient runhooks
 gn gen out/Default
 
 # build
-ninja -C out/Default blink_unittests blink_web_tests content_unittests # more than 40K targets
+ninja -C out/Default blink_unittests blink_web_tests content_unittests content_shell # more than 40K targets
 
 # generate compdb for vscode (see "editor" below)
 ninja -C out/Default -t compdb cxx cc > out/Default/compile_commands.json
@@ -76,6 +76,9 @@ ninja -C out/Default -t targets | sort -u | less
 
 # debugging with lldb
 lldb out/Default/blink_unittests -- --single-process-tests --gtest_filter=NGBlockLayoutAlgorithmTest.FixedSize
+
+# run content_shell
+./out/Default/content_shell https://github.com/hi-ogawa
 ```
 
 ## testing
@@ -454,7 +457,7 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 TODO
 
 - how does content shell initiates renderer thread?
-- how does content shell initiates rendering
+- how does content shell initiates navigating/rendering a page?
 - reactive render loop?
 - deubgging renderer process/thread
 
@@ -464,25 +467,32 @@ TODO
 #
 
 # content/shell/app/shell_main.cc
-main => content::ContentMain =>
-  ContentMainRunner::Create => ContentMainRunnerImpl::Create => ??
-  RunContentProcess =>
-    InitializeMojo => ??
-    ContentMainRunnerImpl::Initialize
-    ContentMainRunnerImpl::Run =>
-      (for browser process)
-        RunBrowser => RunBrowserProcessMain =>
-          # content/browser/browser_main.cc
-          BrowserMain =>
-            BrowserMainRunnerImpl::Create
-            BrowserMainRunnerImpl::Initialize =>
-              instantiate BrowserMainLoop
-              BrowserMainLoop::Init => ShellContentBrowserClient::CreateBrowserMainParts (as ContentBrowserClient)
-              BrowserMainLoop::CreateMainMessageLoop => new BrowserThreadImpl
-              BrowserMainLoop::CreateStartupTasks (queue task e.g. BrowserMainLoop::PreMainMessageLoopRun)
-            BrowserMainRunnerImpl::Run => BrowserMainLoop::RunMainMessageLoop
-      (for other processes)
-        RunOtherNamedProcessTypeMain => ??
+main =>
+  ShellMainDelegate
+  content::ContentMain =>
+    ContentMainRunner::Create => ContentMainRunnerImpl::Create
+    RunContentProcess =>
+      InitializeMojo => ??
+      ContentMainRunnerImpl::Initialize =>
+        ContentClientCreator::Create =>
+          ShellMainDelegate::CreateContentClient (as ContentMainDelegate) => instantiate ShellContentClient
+          SetContentClient (assigned to static global variable with corresponding getter `GetContentClient`)
+          ContentClientInitializer::Set => 
+            (depending on process_type) e.g. ShellMainDelegate::CreateContentBrowserClient, CreateContentRendererClient
+      ContentMainRunnerImpl::Run =>
+        (for browser process)
+          RunBrowser => RunBrowserProcessMain =>
+            # content/browser/browser_main.cc
+            BrowserMain =>
+              BrowserMainRunnerImpl::Create
+              BrowserMainRunnerImpl::Initialize =>
+                instantiate BrowserMainLoop
+                BrowserMainLoop::Init => ShellContentBrowserClient::CreateBrowserMainParts (as ContentBrowserClient)
+                BrowserMainLoop::CreateMainMessageLoop => new BrowserThreadImpl
+                BrowserMainLoop::CreateStartupTasks (queue task e.g. BrowserMainLoop::PreMainMessageLoopRun)
+              BrowserMainRunnerImpl::Run => BrowserMainLoop::RunMainMessageLoop
+        (for other processes)
+          RunOtherNamedProcessTypeMain => ??
 
 
 BrowserMainLoop::PreMainMessageLoopRun =>
@@ -568,7 +578,10 @@ BrowserMainRunnerImpl
   BrowserMainLoop
     BrowserThreadImpl
 
-ShellMainDelegate < ContentMainDelegate (interface for factory of ContentClient, ContentBrowserClient, etc...)
+ShellMainDelegate < ContentMainDelegate
+  ShellContentClient < ContentClient
+  ShellContentBrowserClient  < ContentBrowserClient
+  ShellContentRendererClient < ContentRendererClient
 
 ContentClient
   ContentBrowserClient
