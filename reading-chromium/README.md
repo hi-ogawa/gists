@@ -39,7 +39,7 @@ reading-chromium
 - TODO: vscode extension to jump to to https://source.chromium.org e.g.
   - `https://source.chromium.org/chromium/chromium/src/+/main:<file-name>;l=<line-number>`
 
-- to speed up the search, set `include` filter pattern (e.g. `third_party/blink, content`)
+- for the efficient grep, set file filter pattern e.g. include = `./third_party/blink, ./content` and exclude = `*test.cc, *test.h`
 
 ## strategy
 
@@ -458,6 +458,7 @@ TODO
 
 - how does content shell initiates renderer thread?
 - how does content shell initiates navigating/rendering a page?
+  - e.g. via `content_shell <initial-page-url>`
 - reactive render loop?
 - deubgging renderer process/thread
 
@@ -472,6 +473,7 @@ main =>
   content::ContentMain =>
     ContentMainRunner::Create => ContentMainRunnerImpl::Create
     RunContentProcess =>
+      base::CommandLine::Init
       InitializeMojo => ??
       ContentMainRunnerImpl::Initialize =>
         ContentClientCreator::Create =>
