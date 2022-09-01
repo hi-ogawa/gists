@@ -36,8 +36,9 @@ reading-chromium
 
 - cf. [reading-v8](https://gist.github.com/hi-ogawa/637e1d95da20a522b7bae4c4401090db#hacking)
 
-- TODO: vscode extension to jump to to https://source.chromium.org e.g.
-  - `https://source.chromium.org/chromium/chromium/src/+/main:<file-name>;l=<line-number>`
+- vscode extension to jump to to https://source.chromium.org
+  - https://github.com/hi-ogawa/vscode-extension-shell-shortcut/pull/1
+  - e.g. `filename=${__file__}; xdg-open "https://source.chromium.org/chromium/chromium/src/+/main:${filename:32};l=${__line__}"`
 
 - for the efficient grep, set file filter pattern e.g. include = `./third_party/blink, ./content` and exclude = `*test.cc, *test.h`
 
@@ -456,10 +457,6 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 
 TODO
 
-- how does content shell initiates renderer thread?
-- how does content shell initiates navigating/rendering a page?
-  - e.g. via `content_shell <initial-page-url>`
-- reactive render loop?
 - deubgging renderer process/thread
 
 ```
@@ -502,13 +499,16 @@ BrowserMainLoop::PreMainMessageLoopRun =>
     Shell::Initialize => ShellPlatformDelegate::Initialize (e.g. aura) =>
       instantiate ShellPlatformDataAura => aura::WindowTreeHost::Create
     InitializeMessageLoopContext =>
+      GetStartupURL (get initial page url from command line with fallback "https://www.google.com/")
       Shell::CreateNewWindow =>
         WebContents::Create => ...
         Shell::CreateShell =>
           new Shell
           ShellPlatformDelegate::CreatePlatformWindow => ShellPlatformDataAura::ResizeWindow
           ShellPlatformDelegate::SetContents => aura::Window::Show
-
+        Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams =>
+          CreateNavigationEntryFromLoadParams
+          ??
 
 WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
   new WebContentsImpl
