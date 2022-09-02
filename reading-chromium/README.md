@@ -457,6 +457,7 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 
 TODO
 
+- invoke navigation from renderer host to renderer
 - deubgging renderer process/thread
 
 ```
@@ -506,9 +507,13 @@ BrowserMainLoop::PreMainMessageLoopRun =>
           new Shell
           ShellPlatformDelegate::CreatePlatformWindow => ShellPlatformDataAura::ResizeWindow
           ShellPlatformDelegate::SetContents => aura::Window::Show
-        Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams =>
-          CreateNavigationEntryFromLoadParams
-          ??
+        Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams => NavigateWithoutEntry =>
+          CreateNavigationEntryFromLoadParams => ??
+          CreateNavigationRequestFromLoadParams => ??
+          Navigator::Navigate =>
+            NavigationRequest::BeginNavigation =>
+              csp check extra...?
+              WillStartRequest => ??
 
 WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
   new WebContentsImpl
@@ -530,15 +535,18 @@ WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
 # renderer host
 #
 
-SiteInstanceImpl::GetProcess => RenderProcessHostImpl::GetProcessHostForSiteInstance =>
-  RenderProcessHostImpl::CreateRenderProcessHost =>
-    new RenderProcessHostImpl => 
-      RenderProcessHostImpl::InitializeChannelProxy =>
-        IPC::ChannelProxy::GetRemoteAssociatedInterface (for mojom::Renderer from renderer process)
-  RenderProcessHostImpl::Init =>
-    RegisterMojoInterfaces
-    mojom::Renderer::InitializeRenderer (queueing `RenderThreadImpl::InitializeRenderer` in renderer process in the future?)
-    instantiate ChildProcessLauncher (actually spawn process?)
+SiteInstanceImpl::GetProcess =>
+  RenderProcessHostImpl::GetProcessHostForSiteInstance =>
+    RenderProcessHostImpl::CreateRenderProcessHost =>
+      new RenderProcessHostImpl => 
+        RenderProcessHostImpl::InitializeChannelProxy =>
+          IPC::ChannelProxy::GetRemoteAssociatedInterface (for mojom::Renderer from renderer process)
+    RenderProcessHostImpl::Init =>
+      RegisterMojoInterfaces
+      mojom::Renderer::InitializeRenderer (queueing `RenderThreadImpl::InitializeRenderer` in renderer process in the future?)
+      instantiate ChildProcessLauncher (actually spawn process?)
+  SetProcessInternal =>
+    SiteInstanceGroupManager::GetOrCreateGroupForNewSiteInstance => new SiteInstanceGroup
 
 ?? => 
   AgentSchedulingGroupHost::SetUpIPC =>
@@ -598,13 +606,19 @@ WebContentsImpl < WebContents, NavigationControllerDelegate, ...
   FrameTree
     Navigator
       NavigationControllerImpl (cf. WebContentsImpl::GetController)
+        NavigationEntryImpl < NavigationEntry (stack of navigation entries?)
     FrameTreeNode (one for root)
       RenderFrameHostManager
         RenderFrameHostImpl
           RenderViewHostImpl
 
+NavigationRequest < NavigationHandle
+
 SiteInstanceImpl < SiteInstance
   BrowsingInstance
+  SiteInstanceGroup
+    RenderProcessHostImpl < RenderProcessHost
+    AgentSchedulingGroupHost
 
 RenderProcessHostImpl < mojom::RendererHost, RenderProcessHost < IPC::Sender
   mojo::AssociatedRemote<mojom::Renderer>
