@@ -36,11 +36,25 @@ reading-chromium
 
 - cf. [reading-v8](https://gist.github.com/hi-ogawa/637e1d95da20a522b7bae4c4401090db#hacking)
 
-- vscode extension to jump to to https://source.chromium.org
-  - https://github.com/hi-ogawa/vscode-extension-shell-shortcut/pull/1
-  - e.g. `filename=${__file__}; xdg-open "https://source.chromium.org/chromium/chromium/src/+/main:${filename:32};l=${__line__}"`
-
 - for the efficient grep, set file filter pattern e.g. include = `./third_party/blink, ./content` and exclude = `*test.cc, *test.h`
+
+```json5
+{
+  // https://github.com/fabiospampinato/vscode-open-in-github
+  // git remote add origin-github git@github.com:chromium/chromium.git
+  "openInGitHub.remote.name": "origin-github",
+  "openInGitHub.remote.branch": "main",
+  // https://github.com/hi-ogawa/vscode-extension-shell-shortcut 
+  "hi-ogawa.shell-shortcut": {
+    "commands": [
+      {
+        "name": "open source.chromium.org",
+        "command": "filename=${__file__}; xdg-open \"https://source.chromium.org/chromium/chromium/src/+/main:${filename#*/src/};l=${__line__}\""
+      }
+    ]
+  },
+}  
+```
 
 ## strategy
 
@@ -507,13 +521,8 @@ BrowserMainLoop::PreMainMessageLoopRun =>
           new Shell
           ShellPlatformDelegate::CreatePlatformWindow => ShellPlatformDataAura::ResizeWindow
           ShellPlatformDelegate::SetContents => aura::Window::Show
-        Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams => NavigateWithoutEntry =>
-          CreateNavigationEntryFromLoadParams => ??
-          CreateNavigationRequestFromLoadParams => ??
-          Navigator::Navigate =>
-            NavigationRequest::BeginNavigation =>
-              csp check extra...?
-              WillStartRequest => ??
+        Shell::LoadURL => ...
+
 
 WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
   new WebContentsImpl
@@ -548,9 +557,45 @@ SiteInstanceImpl::GetProcess =>
   SetProcessInternal =>
     SiteInstanceGroupManager::GetOrCreateGroupForNewSiteInstance => new SiteInstanceGroup
 
+
+Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams => NavigateWithoutEntry =>
+  CreateNavigationEntryFromLoadParams => ??
+  CreateNavigationRequestFromLoadParams => ??
+  Navigator::Navigate =>
+    NavigationRequest::BeginNavigation => BeginNavigationImpl =>
+      CheckContentSecurityPolicy
+      StartNavigation => ??
+      WillStartRequest =>
+        NavigationThrottleRunner::ProcessNavigationEvent(NavigationThrottleRunner::Event::WillStartRequest) => InformDelegate(NavigationThrottle::PROCEED) =>
+          NavigationRequest::OnNavigationEventProcessed (as NavigationThrottleRunner::Delegate) =>
+            OnWillStartRequestProcessed => OnStartChecksComplete => 
+              instantiate ServiceWorkerMainResourceHandle
+              extra manipulation e.g. for devtools, embedders, etc...
+              NavigationURLLoader::Create => instantiate NavigationURLLoaderImpl =>
+                ContentBrowserClient::WillCreateURLLoaderFactory (extra customizatoin for embedder)
+                CreateURLLoaderFactoryWithHeaderClient =>
+                  StoragePartitionImpl::GetNetworkContext
+                  network::NetworkContext::CreateURLLoaderFactory (via mojo) => ...
+              NavigationURLLoaderImpl::Start => StartImpl =>
+                CreateInterceptors =>
+                  ServiceWorkerMainResourceLoaderInterceptor::CreateForNavigation
+                  content::PrefetchURLLoaderInterceptor::MaybeCreateInterceptor
+                Restart =>
+                  instantiate network::mojom::URLResponseHead
+                  MaybeStartLoader =>
+                    blink::ThrottlingURLLoader::CreateLoaderAndStart =>
+                      new ThrottlingURLLoader
+                      ThrottlingURLLoader::Start => StartNow => SharedURLLoaderFactory::CreateLoaderAndStart (TODO: who's impl?)
+
+
+network::URLLoader::SendResponseToClient =(mojo)=> NavigationURLLoaderImpl::OnReceiveResponse (as network::mojom::URLLoaderClient) => CallOnReceivedResponse => 
+  NotifyResponseStarted => NavigationRequest::OnResponseStarted (as NavigationURLLoaderDelegate) => ??
+
+
 ?? => 
   AgentSchedulingGroupHost::SetUpIPC =>
     CreateAgentSchedulingGroup (to remote interface mojom::Renderer)
+
 
 #
 # renderer process
@@ -612,8 +657,16 @@ WebContentsImpl < WebContents, NavigationControllerDelegate, ...
         RenderFrameHostImpl
           RenderViewHostImpl
 
-NavigationRequest < NavigationHandle
-
+NavigationRequest < NavigationHandle, NavigationThrottleRunner::Delegate, NavigationURLLoaderDelegate
+  NavigationState
+  NavigationURLLoaderImpl < NavigationURLLoader, network::mojom::URLLoaderClient
+    network::ResourceRequest
+    network::SharedURLLoaderFactory
+    network::mojom::URLLoader (response_url_loader_)
+    blink::ThrottlingURLLoader < network::mojom::URLLoaderClient
+  NavigationThrottleRunner
+    NavigationThrottle (public)
+  
 SiteInstanceImpl < SiteInstance
   BrowsingInstance
   SiteInstanceGroup
