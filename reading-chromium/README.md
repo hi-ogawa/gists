@@ -38,6 +38,10 @@ reading-chromium
 
 - for the efficient grep, set file filter pattern e.g. include = `./third_party/blink, ./content` and exclude = `*test.cc, *test.h`
 
+- mojom syntax highlight https://github.com/JoelEinbinder/mojom-language
+
+- `.vscode/settings.json`
+
 ```json5
 {
   // https://github.com/fabiospampinato/vscode-open-in-github
@@ -589,7 +593,22 @@ Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerIm
 
 
 network::URLLoader::SendResponseToClient =(mojo)=> NavigationURLLoaderImpl::OnReceiveResponse (as network::mojom::URLLoaderClient) => CallOnReceivedResponse => 
-  NotifyResponseStarted => NavigationRequest::OnResponseStarted (as NavigationURLLoaderDelegate) => ??
+  NotifyResponseStarted => NavigationRequest::OnResponseStarted (as NavigationURLLoaderDelegate) =>
+    EnforceCOOP, EnforceCOEP
+    RenderFrameHostManager::GetFrameHostForNavigation (returns RenderFrameHostImpl)
+    WillProcessResponse => ProcessNavigationEvent =>
+      NavigationThrottleRunner::ProcessNavigationEvent(NavigationThrottleRunner::Event::WillProcessResponse) => ... =>
+        NavigationRequest::OnNavigationEventProcessed => OnWillProcessResponseProcessed =>
+          OnWillProcessResponseChecksComplete =>
+            RunCommitDeferringConditions =>
+              CommitDeferringConditionRunner::ProcessChecks => ... =>
+                NavigationRequest::OnCommitDeferringConditionChecksComplete (as CommitDeferringConditionRunner::Delegate) =>
+                  CommitNavigation => RenderFrameHostImpl::CommitNavigation =>
+                    # if same document
+                      mojom::Frame::CommitSameDocumentNavigation => ... (TODO: who's impl on renderer?)
+                    # otherwise
+                      SendCommitNavigation =>
+                        mojom::NavigationClient::CommitNavigation => ... (TODO: who's impl on renderer?)
 
 
 ?? => 
@@ -622,7 +641,8 @@ RendererMain =>
 
 RenderThreadImpl::CreateAgentSchedulingGroup (as mojom::Renderer) => ??
 
-?? => AgentSchedulingGroup::CreateWebView
+?? => AgentSchedulingGroup::CreateWebView =>
+  RenderFrameImpl::CreateMainFrame => ??
 
 
 #
@@ -666,6 +686,7 @@ NavigationRequest < NavigationHandle, NavigationThrottleRunner::Delegate, Naviga
     blink::ThrottlingURLLoader < network::mojom::URLLoaderClient
   NavigationThrottleRunner
     NavigationThrottle (public)
+  blink::mojom::CommitNavigationParamsPtr
   
 SiteInstanceImpl < SiteInstance
   BrowsingInstance
@@ -680,7 +701,7 @@ RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 
-RenderFrameImpl < blink::WebLocalFrameClient
+RenderFrameImpl < mojom::Frame, blink::WebLocalFrameClient
 ```
 
 # old notes
