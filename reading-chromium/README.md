@@ -537,18 +537,22 @@ WebContents::Create => WebContentsImpl::Create => CreateWithOpener =>
     FrameTree::Init =>
       RenderFrameHostManager::InitRoot =>
         CreateRenderFrameHost =>
-          FrameTree::CreateRenderViewHost => RenderViewHostFactory::Create
+          FrameTree::CreateRenderViewHost => RenderViewHostFactory::Create => new RenderViewHostImpl
           RenderFrameHostFactory::Create
         SetRenderFrameHost
     CreateWebContentsView => ??
     WebContentsView::CreateView => ??
+
+?? => RenderFrameHostManager::InitRenderView => WebContentsImpl::CreateRenderViewForRenderManager (as RenderFrameHostManager::Delegate) => 
+  RenderViewHostImpl::CreateRenderView =>
+    AgentSchedulingGroupHost::CreateView => (renderer) mojom::AgentSchedulingGroup::CreateView
 
 
 #
 # renderer host
 #
 
-SiteInstanceImpl::GetProcess =>
+?? => SiteInstanceImpl::GetProcess =>
   RenderProcessHostImpl::GetProcessHostForSiteInstance =>
     RenderProcessHostImpl::CreateRenderProcessHost =>
       new RenderProcessHostImpl => 
@@ -559,8 +563,11 @@ SiteInstanceImpl::GetProcess =>
       mojom::Renderer::InitializeRenderer (queueing `RenderThreadImpl::InitializeRenderer` in renderer process in the future?)
       instantiate ChildProcessLauncher (actually spawn process?)
   SetProcessInternal =>
-    SiteInstanceGroupManager::GetOrCreateGroupForNewSiteInstance => new SiteInstanceGroup
-
+    SiteInstanceGroupManager::GetOrCreateGroupForNewSiteInstance => new SiteInstanceGroup =>
+      AgentSchedulingGroupHost::GetOrCreate => 
+        instantiate AgentSchedulingGroupHost =>
+          AgentSchedulingGroupHost::SetUpIPC =>
+            mojom::Renderer::CreateAgentSchedulingGroup (to remote interface mojom::Renderer)
 
 Shell::LoadURL => LoadURLForFrame => LoadURLWithParams => NavigationControllerImpl::LoadURLWithParams => NavigateWithoutEntry =>
   CreateNavigationEntryFromLoadParams => ??
@@ -611,11 +618,6 @@ network::URLLoader::SendResponseToClient =(mojo)=> NavigationURLLoaderImpl::OnRe
                         mojom::NavigationClient::CommitNavigation => ... (TODO: who's impl on renderer?)
 
 
-?? => 
-  AgentSchedulingGroupHost::SetUpIPC =>
-    CreateAgentSchedulingGroup (to remote interface mojom::Renderer)
-
-
 #
 # renderer process
 #
@@ -639,10 +641,19 @@ RendererMain =>
             V8Initializer::InitializeMainThread
   RunLoop::Run
 
-RenderThreadImpl::CreateAgentSchedulingGroup (as mojom::Renderer) => ??
+(mojom::Renderer) RenderThreadImpl::CreateAgentSchedulingGroup => instantiate AgentSchedulingGroup
 
-?? => AgentSchedulingGroup::CreateWebView =>
-  RenderFrameImpl::CreateMainFrame => ??
+(mojom::AgentSchedulingGroup) AgentSchedulingGroup::CreateView => CreateWebView =>  
+  blink::WebView::Create => ??
+  # if local
+    RenderFrameImpl::CreateMainFrame =>
+      RenderFrameImpl::Create => ??
+      # similar routines as blink's SimTest::SetUp 
+      blink::WebLocalFrame::CreateMainFrame => ...
+      blink::WebLocalFrame::InitializeFrameWidget => ...
+      WebFrameWidgetImpl::InitializeCompositing => ...
+  # if remote
+    blink::WebRemoteFrame::CreateMainFrame => ??
 
 
 #
@@ -698,10 +709,11 @@ RenderProcessHostImpl < mojom::RendererHost, RenderProcessHost < IPC::Sender
   mojo::AssociatedRemote<mojom::Renderer>
 
 RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
-
-RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
+  AgentSchedulingGroup < mojom::AgentSchedulingGroup
 
 RenderFrameImpl < mojom::Frame, blink::WebLocalFrameClient
+
+RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 ```
 
 # old notes
