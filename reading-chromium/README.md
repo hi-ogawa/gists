@@ -612,10 +612,10 @@ network::URLLoader::SendResponseToClient =(mojo)=> NavigationURLLoaderImpl::OnRe
                 NavigationRequest::OnCommitDeferringConditionChecksComplete (as CommitDeferringConditionRunner::Delegate) =>
                   CommitNavigation => RenderFrameHostImpl::CommitNavigation =>
                     # if same document
-                      mojom::Frame::CommitSameDocumentNavigation => ... (TODO: who's impl on renderer?)
+                      mojom::Frame::CommitSameDocumentNavigation => ... (RenderFrameImpl) TODO
                     # otherwise
                       SendCommitNavigation =>
-                        mojom::NavigationClient::CommitNavigation => ... (TODO: who's impl on renderer?)
+                        mojom::NavigationClient::CommitNavigation => ... (NavigationClient) TODO
 
 
 #
@@ -644,16 +644,28 @@ RendererMain =>
 (mojom::Renderer) RenderThreadImpl::CreateAgentSchedulingGroup => instantiate AgentSchedulingGroup
 
 (mojom::AgentSchedulingGroup) AgentSchedulingGroup::CreateView => CreateWebView =>  
-  blink::WebView::Create => ??
+  blink::WebView::Create => ...
   # if local
     RenderFrameImpl::CreateMainFrame =>
-      RenderFrameImpl::Create => ??
+      RenderFrameImpl::Create => new RenderFrameImpl
       # similar routines as blink's SimTest::SetUp 
       blink::WebLocalFrame::CreateMainFrame => ...
       blink::WebLocalFrame::InitializeFrameWidget => ...
       WebFrameWidgetImpl::InitializeCompositing => ...
+      RenderFrameImpl::Initialize =>
+        RegisterMojoInterfaces =>
+          e.g. RenderFrameImpl::BindNavigationClient => instantiate NavigationClient
   # if remote
     blink::WebRemoteFrame::CreateMainFrame => ??
+
+
+(mojom::NavigationClient) NavigationClient::CommitNavigation =>
+  RenderFrameImpl::CommitNavigation =>
+    RenderFrameImpl::CommitNavigationWithParams =>
+      WebLocalFrameImpl::CommitNavigation (as WebNavigationControl) => ??
+
+
+(mojom::Frame) RenderFrameImpl::CommitSameDocumentNavigation => ??
 
 
 #
@@ -712,6 +724,8 @@ RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
   AgentSchedulingGroup < mojom::AgentSchedulingGroup
 
 RenderFrameImpl < mojom::Frame, blink::WebLocalFrameClient
+  NavigationClient < mojom::NavigationClient (TODO: a huge chunk of comment saying there are two types, "request" and "commit")
+  WebLocalFrameImpl < blink::WebNavigationControl < WebLocalFrame
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 ```
