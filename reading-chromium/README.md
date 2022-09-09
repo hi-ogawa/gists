@@ -440,6 +440,7 @@ LocalFrame < Frame
   FrameLoader
     DocumentLoader < WebNavigationBodyLoader::Client
       DocumentParser (e.g. HTMLDocumentParser)
+      WebNavigationParams
 
 WebFrameWidgetImpl < WidgetBaseClient (interface BeginMainFrame), WebFrameWidget (blink/public) < WebWidget (interface UpdateLifecycle)
   WidgetBase < LayerTreeViewDelegate
@@ -661,8 +662,14 @@ RendererMain =>
 
 (mojom::NavigationClient) NavigationClient::CommitNavigation =>
   RenderFrameImpl::CommitNavigation =>
+    instantiate WebNavigationParams
+    blink::WebNavigationBodyLoader::FillNavigationParamsResponseAndBodyLoader =>
+      instantiate NavigationBodyLoader
     RenderFrameImpl::CommitNavigationWithParams =>
-      WebLocalFrameImpl::CommitNavigation (as WebNavigationControl) => ??
+      WebLocalFrameImpl::CommitNavigation(WebNavigationParams) (as WebNavigationControl) => ... =>
+        FrameLoader::CommitDocumentLoader => DocumentLoader::StartLoading => ... => NavigationBodyLoader::StartLoadingBody =>
+          BindURLLoaderAndStartLoadingResponseBodyIfPossible =>
+            BindURLLoaderAndContinue (bind Remote<URLLoader>, Receiver<URLLoaderClient>)
 
 
 (mojom::Frame) RenderFrameImpl::CommitSameDocumentNavigation => ??
@@ -726,6 +733,11 @@ RenderThreadImpl < mojom::Renderer, ChildThreadImpl < IPC::Listener
 RenderFrameImpl < mojom::Frame, blink::WebLocalFrameClient
   NavigationClient < mojom::NavigationClient (TODO: a huge chunk of comment saying there are two types, "request" and "commit")
   WebLocalFrameImpl < blink::WebNavigationControl < WebLocalFrame
+
+WebNavigationParams
+  NavigationBodyLoader < WebNavigationBodyLoader, network::mojom::URLLoaderClient (cf. StaticDataNavigationBodyLoader used in blink unit tests)
+    network::mojom::URLLoaderClientEndpointsPtr
+    WebNavigationBodyLoader::Client (DocumentLoader)
 
 RendererBlinkPlatformImpl < BlinkPlatformImpl < blink::Platform
 ```
