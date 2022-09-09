@@ -476,8 +476,9 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 
 TODO
 
-- invoke navigation from renderer host to renderer
-- deubgging renderer process/thread
+- [x] invoke navigation from renderer host to renderer
+- [ ] invoke navigation from renderer to renderer host
+- [ ] deubgging renderer process/thread
 
 ```
 #
