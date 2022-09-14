@@ -15,7 +15,7 @@ reading-chromium
   - [ ] paint
   - [ ] style
   - [ ] dom
-  - [ ] v8 integration
+  - [ ] v8 integration, script execution
   - [ ] event loop
   - [ ] public api used by content
 - [ ] content (wip)
@@ -463,6 +463,32 @@ Document
 
 LayoutView < LayoutBlockFlow < LayoutBlockFlow
 ```
+
+# javascript
+
+- `third_party/blink/renderer/core/script/README.md`
+
+```
+HTMLDocumentParser::HTMLDocumentParser =>
+  HTMLParserScriptRunner::Create
+
+HTMLDocumentParser::Append => ??
+
+HTMLDocumentParser::Finish => ??
+
+#
+# data structure
+#
+
+HTMLDocumentParser < ScriptableDocumentParser < DecodedDataDocumentParser < DocumentParser
+  HTMLParserScriptRunner < PendingScriptClient
+
+HTMLScriptElement < ScriptElementBase
+  ScriptLoader
+
+V8ScriptRunner
+```
+
 
 # content shell
 
