@@ -471,8 +471,18 @@ LayoutView < LayoutBlockFlow < LayoutBlockFlow
 ```
 HTMLDocumentParser::HTMLDocumentParser =>
   HTMLParserScriptRunner::Create
+  CreateTokenProducer
+  instantiate HTMLTreeBuilder
 
-HTMLDocumentParser::Append => ??
+HTMLDocumentParser::Append => ... =>
+  HTMLDocumentParser::PumpTokenizer => ConstructTreeFromToken =>
+    HTMLTreeBuilder::ConstructTree(AtomicHTMLToken) => ProcessToken => 
+      # switches based on TokenType (e.g. EndTag), InsertionMode (e.g. kInBodyMode)
+        ProcessEndTag => ProcessEndTagForInBody =>
+          # some special check for certain HTMLTag e.g. https://html.spec.whatwg.org/multipage/parsing.html#:~:text=An%20end%20tag%20whose%20tag%20name%20is%20one%20of%3A%20%22address%22%2C
+          # otherwise
+            ProcessAnyOtherEndTagForInBody =>
+              HTMLConstructionSite::GenerateImpliedEndTagsWithExclusion => ??
 
 HTMLDocumentParser::Finish => ??
 
@@ -481,6 +491,12 @@ HTMLDocumentParser::Finish => ??
 #
 
 HTMLDocumentParser < ScriptableDocumentParser < DecodedDataDocumentParser < DocumentParser
+  HTMLTokenProducer
+  HTMLTreeBuilder
+    HTMLConstructionSite
+      ContainerNode (e.g. Document)
+  HTMLPreloadScanner
+  BackgroundHTMLScanner
   HTMLParserScriptRunner < PendingScriptClient
 
 HTMLScriptElement < ScriptElementBase
