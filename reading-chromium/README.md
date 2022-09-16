@@ -475,16 +475,39 @@ HTMLDocumentParser::HTMLDocumentParser =>
   instantiate HTMLTreeBuilder
 
 HTMLDocumentParser::Append => ... =>
-  HTMLDocumentParser::PumpTokenizer => ConstructTreeFromToken =>
-    HTMLTreeBuilder::ConstructTree(AtomicHTMLToken) => ProcessToken => 
-      # switches based on TokenType (e.g. EndTag), InsertionMode (e.g. kInBodyMode)
-        ProcessEndTag => ProcessEndTagForInBody =>
-          # some special check for certain HTMLTag e.g. https://html.spec.whatwg.org/multipage/parsing.html#:~:text=An%20end%20tag%20whose%20tag%20name%20is%20one%20of%3A%20%22address%22%2C
-          # otherwise
-            ProcessAnyOtherEndTagForInBody =>
-              HTMLConstructionSite::GenerateImpliedEndTagsWithExclusion => ??
+  HTMLDocumentParser::PumpTokenizer => 
+    loop 
+      CanTakeNextToken => ...
+      HTMLTokenProducer::ParseNextToken
+      ConstructTreeFromToken =>
+        HTMLTreeBuilder::ConstructTree(AtomicHTMLToken) => ProcessToken => 
+          # switches based on TokenType (e.g. StartTag, EndTag), InsertionMode (e.g. kInBodyMode)
+            ProcessStartTag => ProcessStartTagForInBody =>
+              # for script tag
+                ProcessStartTagForInHead => ProcessScriptStartTag =>
+                  HTMLConstructionSite::InsertScriptElement => instantiate HTMLScriptElement
+              # for "ordinary" tag
+                HTMLConstructionSite::InsertHTMLElement =>
+                  CreateElement (cf. https://html.spec.whatwg.org/C/#create-an-element-for-the-token)
+                  AttachLater
+                  HTMLElementStack::Push
+            ProcessEndTag =>
+              # if kTextMode and HTMLTag::kScript
+                set HTMLTreeBuilder::script_to_process_
 
-HTMLDocumentParser::Finish => ??
+
+HTMLDocumentParser::CanTakeNextToken => 
+  HTMLDocumentParser::RunScriptsForPausedTreeBuilder
+    HTMLTreeBuilder::TakeScriptToProcess
+    HTMLParserScriptRunner::ProcessScriptElement =>
+      HTMLParserScriptRunner::ProcessScriptElementInternal =>
+        ScriptLoader::PrepareScript => ??
+        if HasParserBlockingScript
+          ExecuteParsingBlockingScripts
+
+
+HTMLDocumentParser::Finish => ...
+
 
 #
 # data structure
@@ -495,9 +518,11 @@ HTMLDocumentParser < ScriptableDocumentParser < DecodedDataDocumentParser < Docu
   HTMLTreeBuilder
     HTMLConstructionSite
       ContainerNode (e.g. Document)
+    Element (script_to_process_)
   HTMLPreloadScanner
   BackgroundHTMLScanner
   HTMLParserScriptRunner < PendingScriptClient
+    PendingScript
 
 HTMLScriptElement < ScriptElementBase
   ScriptLoader
