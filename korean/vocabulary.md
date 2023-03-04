@@ -1,5 +1,13 @@
 # PC
 
+## general
+
+취소 (cancel)
+
+선택 (select)
+
+추가 (add)
+
 ## desktop
 
 - misc
@@ -15,6 +23,8 @@
 다시 시작 (restart)
 
 로그아웃 (logout)
+
+내 계정 (my account)
 
 - applications
 
@@ -35,6 +45,24 @@
 크기 (size)
 
 수정 시각 (updated time)
+
+- settings
+
+와이파이 (wifi)
+
+연결됨 (connected)
+
+블루투스 (bluetooth)
+
+장치 (device)
+
+소리 (sound)
+
+디스플레이 (display)
+
+키보드 (keyboard)
+
+지역 및 언어 (region and language)
 
 ## pacman/yay
 
