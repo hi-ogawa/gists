@@ -91,10 +91,13 @@
 검사 (inspect)
 
 새 탭에서 링크 열기 (open link in a new tab)
+
 새 창...  (new window)
+
 시크릿창...  (incognite window)
 
 다른 이름으로 링크 처창 (save link by different name)
+
 링크 주소 복사 (copy link address)
 
 ## youtube
