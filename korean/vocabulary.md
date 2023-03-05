@@ -142,6 +142,18 @@
 
 시청 기록 (view history)
 
+분 번 (minutes ago)
+
+시간 전 (hours ago)
+
+일 전 (days ago)
+
+주 전 (weeks ago)
+
+개월 전 (months ago)
+
+년 전 (years ago)
+
 ## vscode
 
 기본 설정 (preference, basic settings)
