@@ -64,6 +64,12 @@
 
 지역 및 언어 (region and language)
 
+영어 (english)
+
+한국어 (korean)
+
+일본어 (japanese)
+
 ## pacman/yay
 
 설치 (installation)
@@ -100,6 +106,10 @@
 
 링크 주소 복사 (copy link address)
 
+모든 제어기능 표시 (show all controls)
+
+방문 기록 (visit history)
+
 ## youtube
 
 구독 (subscribe)
@@ -107,6 +117,12 @@
 조회수 (views)
 
 공유 (share)
+
+내 관련 재생목록 (my related playlist)
+
+믹스 (mix)
+
+시청 기록 (view history)
 
 ## vscode
 
