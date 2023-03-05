@@ -12,6 +12,8 @@
 
 - misc
 
+사용자 이름 (user name)
+
 암호 (password)
 
 현재 활동 (current activity)
@@ -52,6 +54,8 @@
 
 연결됨 (connected)
 
+연결 끊김 (disconnected)
+
 블루투스 (bluetooth)
 
 장치 (device)
@@ -84,6 +88,10 @@
 
 커밋 (commit)
 
+자동 병합 (auto merge)
+
+병합 충돌 (merge conflict)
+
 ## chrome
 
 복사 (copy)
@@ -110,6 +118,16 @@
 
 방문 기록 (visit history)
 
+새로고침 (refresh)
+
+고정 (pin (tab))
+
+새 탭에서 보기 (view in new tab (duplicate))
+
+음소거 (mute)
+
+세부정보 (details)
+
 ## youtube
 
 구독 (subscribe)
@@ -125,5 +143,11 @@
 시청 기록 (view history)
 
 ## vscode
+
+기본 설정 (preference, basic settings)
+
+색 테마 (color theme)
+
+## typescript
 
 TODO
