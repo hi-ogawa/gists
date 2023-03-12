@@ -8,6 +8,8 @@
 
 추가 (add)
 
+닫기 (close)
+
 ## desktop
 
 - misc
@@ -47,6 +49,8 @@
 크기 (size)
 
 수정 시각 (updated time)
+
+모두 바꾸기 (replace all)
 
 - settings
 
@@ -159,6 +163,10 @@
 기본 설정 (preference, basic settings)
 
 색 테마 (color theme)
+
+밝은 (light)
+
+어두운 (dark)
 
 ## typescript
 
