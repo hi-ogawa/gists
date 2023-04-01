@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "test-e2e": "playwright test",
+    "lint": "prettier -w ."
+  },
+  "devDependencies": {
+    "@hiogawa/utils": "1.4.2-pre.2",
+    "@playwright/test": "^1.32.1",
+    "prettier": "^2.8.7"
+  },
+  "volta": {
+    "node": "18.15.0"
+  }
+}

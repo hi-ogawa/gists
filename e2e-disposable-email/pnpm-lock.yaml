@@ -1,0 +1,69 @@
+lockfileVersion: 5.4
+
+specifiers:
+  "@hiogawa/utils": 1.4.2-pre.2
+  "@playwright/test": ^1.32.1
+  prettier: ^2.8.7
+
+devDependencies:
+  "@hiogawa/utils": 1.4.2-pre.2
+  "@playwright/test": 1.32.1
+  prettier: 2.8.7
+
+packages:
+  /@hiogawa/utils/1.4.2-pre.2:
+    resolution:
+      {
+        integrity: sha512-w8o++HYLjsXKnHq6RZZ60Pk5loVJNTm9NkKy4oIwHbwYl++2pwyNKHEUM8qbKVkvpfT6l5O2W+LtbRaK+eZZkA==,
+      }
+    dev: true
+
+  /@playwright/test/1.32.1:
+    resolution:
+      {
+        integrity: sha512-FTwjCuhlm1qHUGf4hWjfr64UMJD/z0hXYbk+O387Ioe6WdyZQ+0TBDAc6P+pHjx2xCv1VYNgrKbYrNixFWy4Dg==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
+    dependencies:
+      "@types/node": 18.15.11
+      playwright-core: 1.32.1
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
+  /@types/node/18.15.11:
+    resolution:
+      {
+        integrity: sha512-E5Kwq2n4SbMzQOn6wnmBjuK9ouqlURrcZDVfbo9ftDDTFt3nk7ZKK4GMOzoYgnpQJKcxwQw+lGaBvvlMo0qN/Q==,
+      }
+    dev: true
+
+  /fsevents/2.3.2:
+    resolution:
+      {
+        integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==,
+      }
+    engines: { node: ^8.16.0 || ^10.6.0 || >=11.0.0 }
+    os: [darwin]
+    requiresBuild: true
+    dev: true
+    optional: true
+
+  /playwright-core/1.32.1:
+    resolution:
+      {
+        integrity: sha512-KZYUQC10mXD2Am1rGlidaalNGYk3LU1vZqqNk0gT4XPty1jOqgup8KDP8l2CUlqoNKhXM5IfGjWgW37xvGllBA==,
+      }
+    engines: { node: ">=14" }
+    hasBin: true
+    dev: true
+
+  /prettier/2.8.7:
+    resolution:
+      {
+        integrity: sha512-yPngTo3aXUUmyuTjeTUT75txrf+aMh9FiD7q9ZE/i6r0bPb22g4FsE6Y338PQX1bmfy08i9QQCB7/rcUAVntfw==,
+      }
+    engines: { node: ">=10.13.0" }
+    hasBin: true
+    dev: true
